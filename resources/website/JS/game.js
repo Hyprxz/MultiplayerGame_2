@@ -6,9 +6,27 @@ var context = canvas.getContext("2d");
 var myId;
 var sprites = [];
 var blocks = [];
+var keyDown = 'N'; // N for NULL
 
 window.addEventListener("beforeunload", function () {
     pageUnload();
+});
+
+window.addEventListener("keydown", function(evt) {
+    if (evt.keyCode == 65) keyDown = 'a';
+    else if (evt.keyCode == 68) keyDown = 'd';
+
+    var formData = new FormData();
+    formData.append("id", myId);
+    formData.append("jump", (evt.keyCode == 32) ? 'T': 'F'); // 'T' for true  'F' for false
+    formData.append("direction", keyDown);
+    fetch("/game/move", {method: 'POST', body: formData}).then(response => response.json()).then(data => {
+
+    });
+});
+
+window.addEventListener("keyup", function(evt) {
+    if (evt.keyCode == 65 || evt.keyCode == 68) keyDown = 'N';
 });
 
 function pageLoad () {

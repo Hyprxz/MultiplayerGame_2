@@ -15,7 +15,7 @@ public class GameHandler {
     private static boolean gameInitialized = false;
     private static int currentId = 1;
     private double xGravity = 0.0;
-    private double yGravity = 0.009;
+    private double yGravity = 0.001;
     private static final double GUARD  = 0.01;
     static ArrayList<Sprite> spriteArray = new ArrayList<>();
     static ArrayList<Block> blockArray = new ArrayList<>();
@@ -162,6 +162,24 @@ public class GameHandler {
         }
     }
 
+    // could have a movement buffer so speeds don't vary, one sprite id can be in the buffer at one time
+    // But I can't be fucked to try this now
+    @POST
+    @Path("move")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(MediaType.APPLICATION_JSON)
+    @SuppressWarnings("unchecked")
+    public String moveSprite (@FormDataParam("id") int id, @FormDataParam("jump") char jump, @FormDataParam("direction") char direction) {
+        for (Sprite s : spriteArray) {
+            if (s.id == id) {
+                if (jump == 'T') s.yVelocity = (float) -0.5;
+                if (direction == 'a') s.xVelocity = (float) -0.05;
+                else if (direction == 'd') s.xVelocity = (float) 0.05;
+            }
+        }
+        return "{\"status\": \"OK\"}";
+    }
+
     @POST
     @Path("delete")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
@@ -183,7 +201,7 @@ public class GameHandler {
         Random rand = new Random();
         synchronized (blockArray) {
             for (int i = 0; i < 10; i++) {
-                blockArray.add(new Block(rand.nextFloat() * 1000, 500, 50));
+                blockArray.add(new Block(i * 50, 500, 50));
             }
         }
     }
