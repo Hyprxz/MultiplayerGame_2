@@ -12,11 +12,14 @@ import java.util.concurrent.TimeUnit;
 
 @Path("game/")
 public class GameHandler {
+    private static boolean gameInitialized = false;
     private static int currentId = 1;
     private double xGravity = 0.0;
     private double yGravity = 0.009;
+    private static final double GUARD  = 0.01;
     static ArrayList<Sprite> spriteArray = new ArrayList<>();
     static ArrayList<Block> blockArray = new ArrayList<>();
+
 
     class Sprite {
         int id;
@@ -31,15 +34,61 @@ public class GameHandler {
         }
 
         public void checkBoxCollision () {
-            for (int i = 0; i < blockArray.size(); i++) {
+            for (Block block : blockArray) {
+                //top of box first
+                if (y + size <= block.y && y + size + yVelocity >= block.y) {
+                    if (x >= block.x && x <= block.x + block.size) {
+                        yVelocity = 0;
+                        y = (float) (block.y - size - GUARD);
+                    }
+                    else if (x + size >= block.x && x + size <= block.x + block.size) {
+                        yVelocity = 0;
+                        y = (float) (block.y - size - GUARD);
+                    }
+                }
 
+                //right of box
+                if (x >= block.x + block.size && x + xVelocity <= block.x + block.size) {
+                    if (y >= block.y && y <= block.y + block.size) {
+                        this.xVelocity = 0;
+                        this.x = (float) (block.x + block.size + GUARD);
+                    }
+                    else if (y + size >= block.y && y + size <= block.y + block.size) {
+                        this.xVelocity = 0;
+                        this.x = (float) (block.x + block.size + GUARD);
+                    }
+                }
+
+                //bottom of box
+                if (y >= block.y + block.size && y + yVelocity <= block.y + block.size) {
+                    if (x >= block.x && x <= block.x + block.size) {
+                        yVelocity = 0;
+                        y = (float) (block.y + block.size + GUARD);
+                    }
+                    else if (x + size >= block.x && x + size <= block.x + block.size) {
+                        yVelocity = 0;
+                        y = (float) (block.y + size + GUARD);
+                    }
+                }
+
+                //left of box
+                if (x + size <= block.x && x + size + xVelocity >= block.x) {
+                    if (y >= block.y && y <= block.y + block.size) {
+                        xVelocity = 0;
+                        x = (float) (block.y - size - GUARD);
+                    }
+                    else if (y + size >= block.y && y + size <= block.y + block.size) {
+                        xVelocity = 0;
+                        x = (float) (block.y - size - GUARD);
+                    }
+                }
             }
         }
 
         public void update () {
             this.xVelocity += xGravity;
             this.yVelocity += yGravity;
-
+            checkBoxCollision();
             this.x += this.xVelocity;
             this.y += this.yVelocity;
         }
@@ -68,9 +117,6 @@ public class GameHandler {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("id", currentId);
         currentId++;
-        synchronized (blockArray) {
-            blockArray.add(new Block(rand.nextFloat() * 500, 500, 50));
-        }
         return jsonObject.toString();
     }
 
@@ -79,6 +125,11 @@ public class GameHandler {
     @Produces(MediaType.APPLICATION_JSON)
     @SuppressWarnings("unchecked")
     public String getBlocks () {
+        if (!gameInitialized) {
+            initWorld();
+            gameInitialized = true;
+        }
+
         JSONArray jsonArray = new JSONArray();
         synchronized (blockArray) {
             for (Block b : blockArray) {
@@ -128,9 +179,18 @@ public class GameHandler {
         }
     }
 
+    public void initWorld () {
+        Random rand = new Random();
+        synchronized (blockArray) {
+            for (int i = 0; i < 10; i++) {
+                blockArray.add(new Block(rand.nextFloat() * 1000, 500, 50));
+            }
+        }
+    }
+
     public static void gameLoop () throws InterruptedException {
         while (true) {
-            TimeUnit.NANOSECONDS.sleep(1000);
+            TimeUnit.NANOSECONDS.sleep(10);
             for (Sprite s : spriteArray) s.update();
         }
     }
